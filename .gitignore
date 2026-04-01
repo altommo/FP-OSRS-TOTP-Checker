@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+*_results.txt
+*.lock
+.playwright-mcp/
+dist/
+build/
+*.spec
