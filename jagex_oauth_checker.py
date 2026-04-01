@@ -420,33 +420,53 @@ def show_gui() -> dict:
     import tkinter as tk
     from tkinter import ttk, filedialog, scrolledtext
 
+    # FP Brand colours
+    BG = "#0D0D12"
+    CARD = "#16161E"
+    BORDER = "#2A2A35"
+    FP_RED = "#E83A30"
+    FP_ORANGE = "#F58A2C"
+    FP_YELLOW = "#F5D032"
+    FP_GREEN = "#5AC45A"
+    FP_BLUE = "#3A9BE0"
+    FP_PINK = "#E85A9A"
+    TEXT = "#ECECF0"
+    MUTED = "#6E6E80"
+
     config = {"file": None, "skip": 0, "limit": 0, "started": False}
 
     root = tk.Tk()
     root.title("FP Jagex Account Checker v1.0")
     root.geometry("580x520")
     root.resizable(False, False)
-    root.configure(bg="#1A1A2E")
+    root.configure(bg=BG)
+
+    # Rainbow strip at top
+    strip = tk.Frame(root, height=4, bg=BG)
+    strip.pack(fill=tk.X)
+    strip.pack_propagate(False)
+    for color in [FP_RED, FP_ORANGE, FP_YELLOW, FP_GREEN, FP_BLUE, FP_PINK]:
+        tk.Frame(strip, bg=color).pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
     # Header
-    header = tk.Frame(root, bg="#8B5CF6", height=50)
+    header = tk.Frame(root, bg=CARD, height=46)
     header.pack(fill=tk.X)
     header.pack_propagate(False)
-    tk.Label(header, text="FP Jagex Account Checker", font=("Segoe UI", 16, "bold"),
-             fg="white", bg="#8B5CF6").pack(side=tk.LEFT, padx=16, pady=10)
-    tk.Label(header, text="v1.0", font=("Segoe UI", 10), fg="#E2E8F0",
-             bg="#8B5CF6").pack(side=tk.RIGHT, padx=16)
+    tk.Label(header, text="FP Jagex Account Checker", font=("Segoe UI", 15, "bold"),
+             fg=TEXT, bg=CARD).pack(side=tk.LEFT, padx=16, pady=10)
+    tk.Label(header, text="v1.0", font=("Consolas", 10), fg=MUTED,
+             bg=CARD).pack(side=tk.RIGHT, padx=16)
 
     # Content
-    content = tk.Frame(root, bg="#1A1A2E")
+    content = tk.Frame(root, bg=BG)
     content.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
 
     # File row
-    file_frame = tk.Frame(content, bg="#1A1A2E")
+    file_frame = tk.Frame(content, bg=BG)
     file_frame.pack(fill=tk.X, pady=(0, 8))
 
     file_label = tk.Label(file_frame, text="No file selected", font=("Segoe UI", 10),
-                          fg="#94A3B8", bg="#1A1A2E", anchor="w")
+                          fg=MUTED, bg=BG, anchor="w")
 
     def browse():
         path = filedialog.askopenfilename(
@@ -454,7 +474,7 @@ def show_gui() -> dict:
             filetypes=[("Text files", "*.txt"), ("All files", "*.*")])
         if path:
             config["file"] = path
-            file_label.config(text=os.path.basename(path), fg="#10B981")
+            file_label.config(text=os.path.basename(path), fg=FP_GREEN)
             try:
                 with open(path) as f:
                     text_area.delete("1.0", tk.END)
@@ -464,7 +484,7 @@ def show_gui() -> dict:
                 pass
 
     browse_btn = tk.Button(file_frame, text="Browse .txt file...", font=("Segoe UI", 10),
-                           fg="white", bg="#16213E", activebackground="#2D3A5C",
+                           fg=TEXT, bg=CARD, activebackground=BORDER,
                            activeforeground="white", bd=0, padx=12, pady=4,
                            cursor="hand2", command=browse)
     browse_btn.pack(side=tk.LEFT)
@@ -472,22 +492,22 @@ def show_gui() -> dict:
 
     # Paste label
     tk.Label(content, text="Or paste accounts below (email:password:totp per line):",
-             font=("Segoe UI", 10), fg="#E2E8F0", bg="#1A1A2E",
+             font=("Segoe UI", 10), fg=TEXT, bg=BG,
              anchor="w").pack(fill=tk.X, pady=(4, 4))
 
     # Text area
-    text_frame = tk.Frame(content, bg="#2D3A5C", bd=1)
+    text_frame = tk.Frame(content, bg=BORDER, bd=1)
     text_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 8))
     text_area = scrolledtext.ScrolledText(text_frame, font=("Consolas", 10),
-                                          bg="#16213E", fg="#E2E8F0",
-                                          insertbackground="#8B5CF6",
-                                          selectbackground="#8B5CF6",
+                                          bg=CARD, fg=TEXT,
+                                          insertbackground=FP_ORANGE,
+                                          selectbackground=FP_BLUE,
                                           wrap=tk.NONE, bd=0, padx=8, pady=8)
     text_area.pack(fill=tk.BOTH, expand=True)
 
     # Count label
     count_label = tk.Label(content, text="0 accounts", font=("Segoe UI", 10, "bold"),
-                           fg="#D4BC98", bg="#1A1A2E", anchor="w")
+                           fg=FP_YELLOW, bg=BG, anchor="w")
     count_label.pack(fill=tk.X)
 
     def update_count(*_):
@@ -499,25 +519,25 @@ def show_gui() -> dict:
     text_area.bind("<KeyRelease>", update_count)
 
     # Options row
-    opts = tk.Frame(content, bg="#1A1A2E")
+    opts = tk.Frame(content, bg=BG)
     opts.pack(fill=tk.X, pady=(8, 0))
 
-    tk.Label(opts, text="Skip:", font=("Segoe UI", 10), fg="#94A3B8",
-             bg="#1A1A2E").pack(side=tk.LEFT)
+    tk.Label(opts, text="Skip:", font=("Segoe UI", 10), fg=MUTED,
+             bg=BG).pack(side=tk.LEFT)
     skip_var = tk.StringVar(value="0")
-    skip_entry = tk.Entry(opts, textvariable=skip_var, width=5, font=("Segoe UI", 10),
-                          bg="#16213E", fg="#E2E8F0", insertbackground="#8B5CF6", bd=0)
+    skip_entry = tk.Entry(opts, textvariable=skip_var, width=5, font=("Consolas", 10),
+                          bg=CARD, fg=TEXT, insertbackground=FP_ORANGE, bd=0)
     skip_entry.pack(side=tk.LEFT, padx=(4, 16))
 
-    tk.Label(opts, text="Limit (0=all):", font=("Segoe UI", 10), fg="#94A3B8",
-             bg="#1A1A2E").pack(side=tk.LEFT)
+    tk.Label(opts, text="Limit (0=all):", font=("Segoe UI", 10), fg=MUTED,
+             bg=BG).pack(side=tk.LEFT)
     limit_var = tk.StringVar(value="0")
-    limit_entry = tk.Entry(opts, textvariable=limit_var, width=5, font=("Segoe UI", 10),
-                           bg="#16213E", fg="#E2E8F0", insertbackground="#8B5CF6", bd=0)
+    limit_entry = tk.Entry(opts, textvariable=limit_var, width=5, font=("Consolas", 10),
+                           bg=CARD, fg=TEXT, insertbackground=FP_ORANGE, bd=0)
     limit_entry.pack(side=tk.LEFT, padx=(4, 0))
 
     # Buttons
-    btn_frame = tk.Frame(content, bg="#1A1A2E")
+    btn_frame = tk.Frame(content, bg=BG)
     btn_frame.pack(fill=tk.X, pady=(12, 0))
 
     def on_start():
@@ -538,13 +558,13 @@ def show_gui() -> dict:
         root.destroy()
 
     cancel_btn = tk.Button(btn_frame, text="Cancel", font=("Segoe UI", 10),
-                           fg="#94A3B8", bg="#16213E", activebackground="#2D3A5C",
+                           fg=MUTED, bg=CARD, activebackground=BORDER,
                            activeforeground="white", bd=0, padx=20, pady=6,
                            cursor="hand2", command=on_cancel)
     cancel_btn.pack(side=tk.RIGHT, padx=(8, 0))
 
     start_btn = tk.Button(btn_frame, text="Start Checking", font=("Segoe UI", 11, "bold"),
-                          fg="white", bg="#8B5CF6", activebackground="#7C3AED",
+                          fg="white", bg=FP_RED, activebackground=FP_ORANGE,
                           activeforeground="white", bd=0, padx=20, pady=6,
                           cursor="hand2", command=on_start)
     start_btn.pack(side=tk.RIGHT)
