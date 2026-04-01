@@ -415,6 +415,144 @@ async def check_account(page, results_file, account, num, total):
         return ("ERROR", err[:200])
 
 
+def show_gui() -> dict:
+    """Show a GUI when launched with no arguments. Returns config dict or None."""
+    import tkinter as tk
+    from tkinter import ttk, filedialog, scrolledtext
+
+    config = {"file": None, "skip": 0, "limit": 0, "started": False}
+
+    root = tk.Tk()
+    root.title("FP Jagex Account Checker v1.0")
+    root.geometry("580x520")
+    root.resizable(False, False)
+    root.configure(bg="#1A1A2E")
+
+    # Header
+    header = tk.Frame(root, bg="#8B5CF6", height=50)
+    header.pack(fill=tk.X)
+    header.pack_propagate(False)
+    tk.Label(header, text="FP Jagex Account Checker", font=("Segoe UI", 16, "bold"),
+             fg="white", bg="#8B5CF6").pack(side=tk.LEFT, padx=16, pady=10)
+    tk.Label(header, text="v1.0", font=("Segoe UI", 10), fg="#E2E8F0",
+             bg="#8B5CF6").pack(side=tk.RIGHT, padx=16)
+
+    # Content
+    content = tk.Frame(root, bg="#1A1A2E")
+    content.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
+
+    # File row
+    file_frame = tk.Frame(content, bg="#1A1A2E")
+    file_frame.pack(fill=tk.X, pady=(0, 8))
+
+    file_label = tk.Label(file_frame, text="No file selected", font=("Segoe UI", 10),
+                          fg="#94A3B8", bg="#1A1A2E", anchor="w")
+
+    def browse():
+        path = filedialog.askopenfilename(
+            title="Select accounts file",
+            filetypes=[("Text files", "*.txt"), ("All files", "*.*")])
+        if path:
+            config["file"] = path
+            file_label.config(text=os.path.basename(path), fg="#10B981")
+            try:
+                with open(path) as f:
+                    text_area.delete("1.0", tk.END)
+                    text_area.insert("1.0", f.read())
+                update_count()
+            except Exception:
+                pass
+
+    browse_btn = tk.Button(file_frame, text="Browse .txt file...", font=("Segoe UI", 10),
+                           fg="white", bg="#16213E", activebackground="#2D3A5C",
+                           activeforeground="white", bd=0, padx=12, pady=4,
+                           cursor="hand2", command=browse)
+    browse_btn.pack(side=tk.LEFT)
+    file_label.pack(side=tk.LEFT, padx=(12, 0), fill=tk.X, expand=True)
+
+    # Paste label
+    tk.Label(content, text="Or paste accounts below (email:password:totp per line):",
+             font=("Segoe UI", 10), fg="#E2E8F0", bg="#1A1A2E",
+             anchor="w").pack(fill=tk.X, pady=(4, 4))
+
+    # Text area
+    text_frame = tk.Frame(content, bg="#2D3A5C", bd=1)
+    text_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 8))
+    text_area = scrolledtext.ScrolledText(text_frame, font=("Consolas", 10),
+                                          bg="#16213E", fg="#E2E8F0",
+                                          insertbackground="#8B5CF6",
+                                          selectbackground="#8B5CF6",
+                                          wrap=tk.NONE, bd=0, padx=8, pady=8)
+    text_area.pack(fill=tk.BOTH, expand=True)
+
+    # Count label
+    count_label = tk.Label(content, text="0 accounts", font=("Segoe UI", 10, "bold"),
+                           fg="#D4BC98", bg="#1A1A2E", anchor="w")
+    count_label.pack(fill=tk.X)
+
+    def update_count(*_):
+        lines = text_area.get("1.0", tk.END).strip().split("\n")
+        count = sum(1 for l in lines if l.strip() and not l.strip().startswith("#")
+                    and l.count(":") >= 2)
+        count_label.config(text=f"{count} account{'s' if count != 1 else ''}")
+
+    text_area.bind("<KeyRelease>", update_count)
+
+    # Options row
+    opts = tk.Frame(content, bg="#1A1A2E")
+    opts.pack(fill=tk.X, pady=(8, 0))
+
+    tk.Label(opts, text="Skip:", font=("Segoe UI", 10), fg="#94A3B8",
+             bg="#1A1A2E").pack(side=tk.LEFT)
+    skip_var = tk.StringVar(value="0")
+    skip_entry = tk.Entry(opts, textvariable=skip_var, width=5, font=("Segoe UI", 10),
+                          bg="#16213E", fg="#E2E8F0", insertbackground="#8B5CF6", bd=0)
+    skip_entry.pack(side=tk.LEFT, padx=(4, 16))
+
+    tk.Label(opts, text="Limit (0=all):", font=("Segoe UI", 10), fg="#94A3B8",
+             bg="#1A1A2E").pack(side=tk.LEFT)
+    limit_var = tk.StringVar(value="0")
+    limit_entry = tk.Entry(opts, textvariable=limit_var, width=5, font=("Segoe UI", 10),
+                           bg="#16213E", fg="#E2E8F0", insertbackground="#8B5CF6", bd=0)
+    limit_entry.pack(side=tk.LEFT, padx=(4, 0))
+
+    # Buttons
+    btn_frame = tk.Frame(content, bg="#1A1A2E")
+    btn_frame.pack(fill=tk.X, pady=(12, 0))
+
+    def on_start():
+        # Save text to temp file if no file was browsed
+        if not config["file"]:
+            text = text_area.get("1.0", tk.END).strip()
+            if text:
+                tmp = os.path.join(os.environ.get("TEMP", "/tmp"), "fp_checker_input.txt")
+                with open(tmp, "w") as f:
+                    f.write(text)
+                config["file"] = tmp
+        config["skip"] = int(skip_var.get() or 0)
+        config["limit"] = int(limit_var.get() or 0)
+        config["started"] = True
+        root.destroy()
+
+    def on_cancel():
+        root.destroy()
+
+    cancel_btn = tk.Button(btn_frame, text="Cancel", font=("Segoe UI", 10),
+                           fg="#94A3B8", bg="#16213E", activebackground="#2D3A5C",
+                           activeforeground="white", bd=0, padx=20, pady=6,
+                           cursor="hand2", command=on_cancel)
+    cancel_btn.pack(side=tk.RIGHT, padx=(8, 0))
+
+    start_btn = tk.Button(btn_frame, text="Start Checking", font=("Segoe UI", 11, "bold"),
+                          fg="white", bg="#8B5CF6", activebackground="#7C3AED",
+                          activeforeground="white", bd=0, padx=20, pady=6,
+                          cursor="hand2", command=on_start)
+    start_btn.pack(side=tk.RIGHT)
+
+    root.mainloop()
+    return config if config["started"] else None
+
+
 async def main():
     print("FP OSRS Jagex Account Checker v1.0")
     print("=" * 40)
@@ -426,20 +564,31 @@ async def main():
     global RESULTS_FILE
 
     args = sys.argv[1:]
-    i = 0
-    while i < len(args):
-        if args[i] == "--file" and i + 1 < len(args):
-            accounts_file = args[i + 1]; i += 2
-        elif args[i] == "--skip" and i + 1 < len(args):
-            skip = int(args[i + 1]); i += 2
-        elif args[i] == "--limit" and i + 1 < len(args):
-            limit = int(args[i + 1]); i += 2
-        elif args[i] == "--chrome" and i + 1 < len(args):
-            chrome_path = args[i + 1]; i += 2
-        elif args[i] == "--output" and i + 1 < len(args):
-            RESULTS_FILE = args[i + 1]; i += 2
-        elif args[i] == "--help":
-            print("""
+
+    # No args = show GUI
+    if not args:
+        config = show_gui()
+        if not config or not config["file"]:
+            print("Cancelled.")
+            sys.exit(0)
+        accounts_file = config["file"]
+        skip = config["skip"]
+        limit = config["limit"]
+    else:
+        i = 0
+        while i < len(args):
+            if args[i] == "--file" and i + 1 < len(args):
+                accounts_file = args[i + 1]; i += 2
+            elif args[i] == "--skip" and i + 1 < len(args):
+                skip = int(args[i + 1]); i += 2
+            elif args[i] == "--limit" and i + 1 < len(args):
+                limit = int(args[i + 1]); i += 2
+            elif args[i] == "--chrome" and i + 1 < len(args):
+                chrome_path = args[i + 1]; i += 2
+            elif args[i] == "--output" and i + 1 < len(args):
+                RESULTS_FILE = args[i + 1]; i += 2
+            elif args[i] == "--help":
+                print("""
 Usage: jagex_oauth_checker [OPTIONS]
 
 Options:
@@ -450,11 +599,11 @@ Options:
   --output PATH    Results file path (default: results_<timestamp>.txt)
   --help           Show this help
 """)
-            sys.exit(0)
-        else:
-            if os.path.isfile(args[i]):
-                accounts_file = args[i]
-            i += 1
+                sys.exit(0)
+            else:
+                if os.path.isfile(args[i]):
+                    accounts_file = args[i]
+                i += 1
 
     if not accounts_file:
         for name in ["accounts.txt", "jagex_accounts.txt", "totp_accounts.txt"]:
